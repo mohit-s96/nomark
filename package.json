@@ -1,0 +1,56 @@
+{
+  "version": "0.1.0",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "tsdx test",
+    "lint": "tsdx lint",
+    "prepare": "tsdx build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "peerDependencies": {},
+  "husky": {
+    "hooks": {
+      "pre-commit": "tsdx lint"
+    }
+  },
+  "keywords": [
+    "nomark",
+    "markdown",
+    "markdown-lite",
+    "simple-markdown",
+    "nomark-js",
+    "nomark parser"
+  ],
+  "description": "nomark is a very simple formatting specification for generating html. this is the parser for text written following the nomark spec",
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "name": "nomark-js",
+  "author": "msx47",
+  "module": "dist/nomark-js.esm.js",
+  "size-limit": [
+    {
+      "path": "dist/nomark-js.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/nomark-js.esm.js",
+      "limit": "10 KB"
+    }
+  ]
+}
