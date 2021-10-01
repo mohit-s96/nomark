@@ -7,10 +7,10 @@ export function createError(
 ) {
   switch (errorLevel) {
     case 'warn':
-      console.warn(getErrorMessage(token || '', (line = 0)));
+      console.warn(getErrorMessage(token || '', line || 0));
       break;
     case 'throw':
-      throw new Error(getErrorMessage(token || '', (line = 0)));
+      throw new Error(getErrorMessage(token || '', line || 0));
     default:
       break;
   }
