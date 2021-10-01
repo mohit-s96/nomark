@@ -68,6 +68,11 @@ function parseAttributes(
     i++;
     if (i === len) {
       createError('fatal', line, errorLevel);
+      if (errorLevel !== 'warn') {
+        console.error('Infinite loop detected at line' + line) +
+          " this isn't an issue as it will always be detected and resolved but your nomark text might not be following the specs";
+      }
+      break;
     }
   }
 
