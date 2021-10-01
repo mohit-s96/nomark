@@ -1,4 +1,4 @@
-import ParseTree from "../core/parseTree";
+import ParseTree from '../core/parseTree';
 
 export type HtmlAttributeType = {
   key: string;
@@ -15,4 +15,6 @@ export type ParseTreeInitializer = {
   children?: Array<ParseTree>;
 };
 
-export type AttributeType = "class" | "attribute" | "id" | "type" | "";
+export type AttributeType = 'class' | 'attribute' | 'id' | 'type' | '';
+
+export type ErrorLevel = 'warn' | 'throw' | 'ignore';

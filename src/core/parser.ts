@@ -1,64 +1,73 @@
-import { AttributeType, HtmlAttributeType } from "../types/utilTypes";
-import { createError } from "./errors";
-import ParseTree from "./parseTree";
-import Stack from "./stack";
+import {
+  AttributeType,
+  ErrorLevel,
+  HtmlAttributeType,
+} from '../types/utilTypes';
+import { createError } from './errors';
+import ParseTree from './parseTree';
+import Stack from './stack';
 
 function getNode(): ParseTree {
   return new ParseTree();
 }
 
-function parseAttributes(buffer: string, index: number, line: number) {
+function parseAttributes(
+  buffer: string,
+  index: number,
+  line: number,
+  errorLevel: ErrorLevel
+) {
   const classes: string[] = [];
-  let id = "";
-  let type = "";
+  let id = '';
+  let type = '';
   const attributes: HtmlAttributeType[] = [];
 
   let i = index;
 
   const len = buffer.length;
 
-  let currentBuffer = "";
+  let currentBuffer = '';
 
-  let currentType: AttributeType = "";
+  let currentType: AttributeType = '';
 
   function updateBuffers() {
     switch (currentType) {
-      case "attribute":
-        const arr = currentBuffer.split("=");
+      case 'attribute':
+        const arr = currentBuffer.split('=');
         const key = arr[0];
         const value = arr[1];
         attributes.push({ key, value });
         break;
-      case "class":
+      case 'class':
         classes.push(currentBuffer);
         break;
-      case "id":
+      case 'id':
         id = currentBuffer;
         break;
-      case "type":
+      case 'type':
         type = currentBuffer;
         break;
       default:
         break;
     }
-    currentBuffer = "";
-    currentType = "";
+    currentBuffer = '';
+    currentType = '';
   }
 
-  while (buffer[i] !== "*") {
-    if (buffer[i] === "." && currentType! === "") currentType = "class";
-    else if (buffer[i] === "#" && currentType! === "") currentType = "id";
-    else if (buffer[i] === "@" && currentType! === "") currentType = "type";
-    else if (buffer[i] === "`" && currentType! === "")
-      currentType = "attribute";
-    else if (buffer[i] === " ") {
+  while (buffer[i] !== '*') {
+    if (buffer[i] === '.' && currentType! === '') currentType = 'class';
+    else if (buffer[i] === '#' && currentType! === '') currentType = 'id';
+    else if (buffer[i] === '@' && currentType! === '') currentType = 'type';
+    else if (buffer[i] === '`' && currentType! === '')
+      currentType = 'attribute';
+    else if (buffer[i] === ' ') {
       updateBuffers();
     } else {
       currentBuffer += buffer[i];
     }
     i++;
     if (i === len) {
-      throw new Error(createError("fatal", line));
+      createError('fatal', line, errorLevel);
     }
   }
 
@@ -82,19 +91,19 @@ function createTextNode(currentNode: ParseTree, buffer: string) {
   node.isTextNode = true;
   let rg = /\n[ \t]*/gi;
   let str = buffer;
-  let text = str!.replace(rg, " ").trim();
+  let text = str!.replace(rg, ' ').trim();
   node.text = text;
   currentNode!.children?.push(node);
-  buffer = "";
-  return "";
+  buffer = '';
+  return '';
 }
 
-function parser(rawData: string): ParseTree {
+function parser(rawData: string, errorLevel?: ErrorLevel): ParseTree {
   const length = rawData.length;
 
   if (length < 2) {
     return new ParseTree({
-      type: "null",
+      type: 'null',
     });
   }
 
@@ -110,12 +119,12 @@ function parser(rawData: string): ParseTree {
 
   let isTextActive = false;
 
-  let activeTextBuffer = "";
+  let activeTextBuffer = '';
 
   for (let i = 0; i < length; i++) {
     const char = rawData[i];
-    if (char === "{") {
-      if (rawData[i - 1] === "\\") {
+    if (char === '{') {
+      if (rawData[i - 1] === '\\') {
         continue;
       }
       if (activeTextBuffer.length > 0) {
@@ -134,14 +143,14 @@ function parser(rawData: string): ParseTree {
         currentNode = newNode;
         nestingLevel++;
       }
-    } else if (char === "}") {
-      if (rawData[i - 1] === "\\") {
+    } else if (char === '}') {
+      if (rawData[i - 1] === '\\') {
         continue;
       }
-      if (stack.top() !== "{") {
-        throw new Error(createError(char, lineCount));
+      if (stack.top() !== '{') {
+        createError(char, lineCount, errorLevel);
       } else if (nestingLevel === -1) {
-        throw new Error(createError(char, lineCount));
+        createError(char, lineCount, errorLevel);
       } else if (nestingLevel === 0) {
         stack.pop();
         break;
@@ -155,16 +164,21 @@ function parser(rawData: string): ParseTree {
         nestingLevel--;
         isTextActive = false;
       }
-    } else if (char === "*") {
-      if (rawData[i - 1] === "\\") {
+    } else if (char === '*') {
+      if (rawData[i - 1] === '\\') {
         continue;
       }
-      if (stack.top() === "*") {
+      if (stack.top() === '*') {
         stack.pop();
       } else {
         stack.push(char);
 
-        const parseResults = parseAttributes(rawData, i + 1, lineCount);
+        const parseResults = parseAttributes(
+          rawData,
+          i + 1,
+          lineCount,
+          errorLevel!
+        );
 
         i = parseResults.index;
 
@@ -177,10 +191,10 @@ function parser(rawData: string): ParseTree {
         currentNode!.type = parseResults.type;
       }
     } else {
-      if (char === "\n") {
+      if (char === '\n') {
         lineCount++;
       }
-      if (!isTextActive && char !== " " && char !== "\n") {
+      if (!isTextActive && char !== ' ' && char !== '\n') {
         isTextActive = true;
         activeTextBuffer += char;
       } else if (isTextActive) {
@@ -190,7 +204,7 @@ function parser(rawData: string): ParseTree {
   }
 
   if (stack.top()) {
-    throw new Error(createError());
+    createError('', 0, errorLevel);
   }
 
   return nodes.top();
