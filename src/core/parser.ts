@@ -69,8 +69,11 @@ function parseAttributes(
     if (i === len) {
       createError('fatal', line, errorLevel);
       if (errorLevel !== 'warn') {
-        console.error('Infinite loop detected at line' + line) +
-          " this isn't an issue as it will always be detected and resolved but your nomark text might not be following the specs";
+        console.error(
+          'Infinite loop detected at line' +
+            line +
+            " this isn't an issue as it will always be detected and resolved but your nomark text might not be following the specs"
+        );
       }
       break;
     }
@@ -96,8 +99,32 @@ function createTextNode(currentNode: ParseTree, buffer: string) {
   node.isTextNode = true;
   let rg = /\n[ \t]*/gi;
   let str = buffer;
-  let text = str!.replace(rg, ' ').trim();
-  node.text = text;
+
+  if (currentNode.type !== 'pre' && currentNode.type !== 'code') {
+    str = str!.replace(rg, ' ');
+    str = str.trim();
+  }
+  str = str.replace(/</g, '&lt;');
+  str = str.replace(/>/g, '&gt;');
+  str = str.replace(/\\/g, '');
+
+  if (currentNode.type === 'code') {
+    // debugger;
+    let len = str.length;
+    let idx = 0;
+    let temp = '';
+    while (idx < len) {
+      if (str[idx] === ' ' && str[idx + 1] === ' ' && str[idx - 1] === '\n') {
+        idx += 5;
+        continue;
+      }
+      temp = temp.concat(str[idx]);
+      idx++;
+    }
+    str = temp;
+  }
+
+  node.text = str;
   currentNode!.children?.push(node);
   buffer = '';
   return '';
@@ -111,7 +138,7 @@ function parser(rawData: string, errorLevel?: ErrorLevel): ParseTree {
       type: 'null',
     });
   }
-
+  //{\n  *.flex .flex-col*\n  {\n    \n      *@pre*\n      {\n        *@code .language-javascript*\n        function(x)\\{\n          \n        \n      \\}\n      }\n      \n    \n  }\n}
   const stack = new Stack<string>();
 
   let nodes = new Stack<ParseTree>();
@@ -126,10 +153,29 @@ function parser(rawData: string, errorLevel?: ErrorLevel): ParseTree {
 
   let activeTextBuffer = '';
 
+  let codeEditing = false;
+
+  function addToTextBuffer(char: string) {
+    if (char === '\n') {
+      lineCount++;
+    }
+    if (!isTextActive && char !== ' ' && char !== '\n') {
+      isTextActive = true;
+      activeTextBuffer += char;
+    } else if (isTextActive) {
+      activeTextBuffer += char;
+    }
+  }
+
   for (let i = 0; i < length; i++) {
     const char = rawData[i];
     if (char === '{') {
+      if (codeEditing) {
+        addToTextBuffer(char);
+        continue;
+      }
       if (rawData[i - 1] === '\\') {
+        addToTextBuffer(char);
         continue;
       }
       if (activeTextBuffer.length > 0) {
@@ -149,7 +195,12 @@ function parser(rawData: string, errorLevel?: ErrorLevel): ParseTree {
         nestingLevel++;
       }
     } else if (char === '}') {
+      if (codeEditing) {
+        addToTextBuffer(char);
+        continue;
+      }
       if (rawData[i - 1] === '\\') {
+        addToTextBuffer(char);
         continue;
       }
       if (stack.top() !== '{') {
@@ -158,7 +209,7 @@ function parser(rawData: string, errorLevel?: ErrorLevel): ParseTree {
         createError(char, lineCount, errorLevel);
       } else if (nestingLevel === 0) {
         stack.pop();
-        break;
+        continue;
       } else {
         if (activeTextBuffer.length > 0) {
           activeTextBuffer = createTextNode(currentNode!, activeTextBuffer);
@@ -170,6 +221,10 @@ function parser(rawData: string, errorLevel?: ErrorLevel): ParseTree {
         isTextActive = false;
       }
     } else if (char === '*') {
+      if (codeEditing) {
+        addToTextBuffer(char);
+        continue;
+      }
       if (rawData[i - 1] === '\\') {
         continue;
       }
@@ -196,15 +251,21 @@ function parser(rawData: string, errorLevel?: ErrorLevel): ParseTree {
         currentNode!.type = parseResults.type;
       }
     } else {
-      if (char === '\n') {
-        lineCount++;
+      if (char === '`') {
+        if (currentNode!.type === 'code') {
+          if (rawData[i - 1] !== '\\') {
+            if (stack.top() === char) {
+              codeEditing = false;
+              stack.pop();
+            } else {
+              stack.push(char);
+              codeEditing = true;
+            }
+            continue;
+          }
+        }
       }
-      if (!isTextActive && char !== ' ' && char !== '\n') {
-        isTextActive = true;
-        activeTextBuffer += char;
-      } else if (isTextActive) {
-        activeTextBuffer += char;
-      }
+      addToTextBuffer(char);
     }
   }
 

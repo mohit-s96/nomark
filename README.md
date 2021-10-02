@@ -14,11 +14,11 @@ nomark is a tiny, lite version of md aimed at making it easy to write classes an
 
 5. elements can have deep nesting
 
-6. elements can define it's type, classes and id's and ANY other attributes after the opening braces in the format mentioned in line 9.
+6. elements can define it's type, classes and id's and ANY other attributes after the opening braces in the format mentioned in line 8.
 
 7. if no element type is specified the default type will be a "div" tag
 
-8. `*.class1 .class2 .class3 #id1 @type src=imagefromweb.com/1.jpg*`
+8. `` *.class1 .class2 .class3 #id1 @type `src=imagefromweb.com/1.jpg*  ``
 
 9. escape character is \
 
