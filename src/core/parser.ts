@@ -145,7 +145,7 @@ function parser(rawData: string, errorLevel?: ErrorLevel): ParseTree {
 
   let nestingLevel = -1;
 
-  let currentNode: ParseTree;
+  let currentNode: ParseTree | any = {};
 
   let lineCount = 1;
 
@@ -252,7 +252,7 @@ function parser(rawData: string, errorLevel?: ErrorLevel): ParseTree {
       }
     } else {
       if (char === '`') {
-        if (currentNode!.type === 'code') {
+        if (currentNode?.type === 'code') {
           if (rawData[i - 1] !== '\\') {
             if (stack.top() === char) {
               codeEditing = false;
