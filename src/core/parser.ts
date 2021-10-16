@@ -124,7 +124,7 @@ function createTextNode(currentNode: ParseTree, buffer: string) {
     str = temp;
   }
 
-  node.text = str;
+  node.text = str.trim();
   currentNode!.children?.push(node);
   buffer = '';
   return '';
